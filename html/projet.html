@@ -74,21 +74,18 @@
             $(document).ready(function() {
                 $('.searchInput').on('keyup', function() {
                     var input = $(this).val().trim();
-                    // Vérifie si l'input est non-vide avant de lancer la recherche
                     if (input.length > 0) {
                         searchProduct(input);
                     } else {
-                        // Efface les résultats et le message d'erreur si le champ est vide
                         $("#searchResults").empty();
-                        $("#codeIncorrect").text(""); // Optionnel: Efface le message d'erreur
+                        $("#codeIncorrect").text("");
                     }
                 });
             });
                 
             function searchProduct(input) {
-                // Cette vérification est redondante étant donné le gestionnaire d'événements 'keyup', mais elle est utile pour la clarté
                 if (!input) {
-                    return; // Sort de la fonction si l'input est vide
+                    return; 
                 }
             
                 var isBarcode = /^\d+$/.test(input);
@@ -102,17 +99,13 @@
                     method: "GET"
                 }).done(function(response) {
                     if (isBarcode && response.status === 1) {
-                        // Affiche les résultats sous forme de tableau même pour un seul résultat
                         displaySearchResults([response.product]);
                     } else if (!isBarcode && response.products && response.products.length > 0) {
-                        // Affiche tous les résultats trouvés pour le nom de produit
                         displaySearchResults(response.products);
                     } else {
-                        // Affiche un message si aucune correspondance n'est trouvée
                         $("#searchResults").html("<p>Aucune correspondance trouvée.</p>");
                     }
                 }).fail(function() {
-                    // Gère les erreurs de la requête AJAX
                     $("#searchResults").html("<p>Erreur lors de la recherche.</p>");
                 });
             }
