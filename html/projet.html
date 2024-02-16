@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>NUTRISCORE</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #F0F4C3; 
+                display: flex;
+                flex-direction: column; 
+                align-items: center;
+                justify-content: flex-start; 
+                height: 100vh;
+                padding-top: 20px; 
+                margin: 0;
+            }
+
+            .searchContainer {
+                text-align: center;
+                margin: 20px 0; 
+            }
+
+            .searchInput {
+                padding: 12px 20px; 
+                border: 2px solid #AED581; 
+                border-radius: 25px; 
+                width: 300px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+                transition: border-color 0.3s ease-in-out; 
+            }
+
+            .searchInput:focus {
+                outline: none; 
+                border-color: #689F38;
+            }
+
+            #searchResults {
+                margin-top: 20px;
+                width: 80%;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+
+            th {
+                background-color: #f2f2f2;
+            }
+
+            img {
+                height: 50px;
+            }
+        </style>
+        <script src="../js/jquery-3.7.1.js"></script>
+    </head>
+    <body>
+        <div id="codeIncorrect"></div>
+        <div class="searchContainer">
+            <input type="text" class="searchInput" placeholder="Entrez le code barre ou le nom du produit...">
+        </div>
+
+        <div id="searchResults"></div>
+
+        <script>
+            $(document).ready(function() {
+                $('.searchInput').on('keyup', function() {
+                    var input = $(this).val().trim();
+                    // Vérifie si l'input est non-vide avant de lancer la recherche
+                    if (input.length > 0) {
+                        searchProduct(input);
+                    } else {
+                        // Efface les résultats et le message d'erreur si le champ est vide
+                        $("#searchResults").empty();
+                        $("#codeIncorrect").text(""); // Optionnel: Efface le message d'erreur
+                    }
+                });
+            });
+                
+            function searchProduct(input) {
+                // Cette vérification est redondante étant donné le gestionnaire d'événements 'keyup', mais elle est utile pour la clarté
+                if (!input) {
+                    return; // Sort de la fonction si l'input est vide
+                }
+            
+                var isBarcode = /^\d+$/.test(input);
+                var url = isBarcode ?
+                    "https://world.openfoodfacts.org/api/v2/product/" + input + ".json" :
+                    "https://world.openfoodfacts.org/cgi/search.pl?search_terms=" + encodeURIComponent(input) + "&search_simple=1&action=process&json=1";
+            
+                $.ajax({
+                    url: url,
+                    dataType: "json",
+                    method: "GET"
+                }).done(function(response) {
+                    if (isBarcode && response.status === 1) {
+                        // Affiche les résultats sous forme de tableau même pour un seul résultat
+                        displaySearchResults([response.product]);
+                    } else if (!isBarcode && response.products && response.products.length > 0) {
+                        // Affiche tous les résultats trouvés pour le nom de produit
+                        displaySearchResults(response.products);
+                    } else {
+                        // Affiche un message si aucune correspondance n'est trouvée
+                        $("#searchResults").html("<p>Aucune correspondance trouvée.</p>");
+                    }
+                }).fail(function() {
+                    // Gère les erreurs de la requête AJAX
+                    $("#searchResults").html("<p>Erreur lors de la recherche.</p>");
+                });
+            }
+            
+            function displaySearchResults(products) {
+                var html = "<table><thead><tr><th>Nom du produit</th><th>Marque</th><th>Nutri-Score</th><th>Image</th></tr></thead><tbody>";
+            
+                products.forEach(function(product) {
+                    html += "<tr><td>" + product.product_name + "</td>";
+                    html += "<td>" + (product.brands || "Non spécifié") + "</td>";
+                    html += "<td>" + (product.nutriscore_grade ? product.nutriscore_grade.toUpperCase() : "N/A") + "</td>";
+                    html += "<td><img src='" + (product.image_front_small_url || "") + "' alt='Image produit' height='50'></td></tr>";
+                });
+            
+                html += "</tbody></table>";
+                $("#searchResults").html(html);
+            }
+        </script>
+            
+    </body>
+</html>
